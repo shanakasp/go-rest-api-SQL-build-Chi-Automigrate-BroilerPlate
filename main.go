@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -24,9 +25,11 @@ func main() {
 		log.Fatal(err)
 	}
 	autoMigrate()
-	
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+
+	r.Post("/create", insertData) // Correct route handler
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
 	})
@@ -48,4 +51,34 @@ func autoMigrate() {
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+func insertData(w http.ResponseWriter, r *http.Request) {
+	var user User
+
+	// Decode the JSON body
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Prepare the SQL statement
+	stmt, err := db.Prepare("INSERT INTO usersss(name, age) VALUES(?, ?)")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	// Execute the prepared statement with the user data
+	_, err = stmt.Exec(user.Name, user.Age)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Send a success response
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("User successfully created"))
 }
