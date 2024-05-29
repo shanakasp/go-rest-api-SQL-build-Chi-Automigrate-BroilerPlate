@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -29,7 +30,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	r.Post("/create", insertData) // Correct route handler
+	r.Post("/create", insertData) 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
 	})
@@ -80,5 +81,8 @@ func insertData(w http.ResponseWriter, r *http.Request) {
 
 	// Send a success response
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("User successfully created"))
+
+	responseMessage := fmt.Sprintf("User successfully created: %s, Age: %d", user.Name, user.Age)
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(responseMessage))
 }
